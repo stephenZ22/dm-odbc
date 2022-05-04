@@ -18,13 +18,13 @@ module ODBCAdapter
       # Explicitly turning off prepared_statements in the null adapter because
       # there isn't really a standard on which substitution character to use.
       def prepared_statements
-        false
+        true
       end
 
       # Turning off support for migrations because there is no information to
       # go off of for what syntax the DBMS will expect.
       def supports_migrations?
-        false
+        true
       end
     end
   end
