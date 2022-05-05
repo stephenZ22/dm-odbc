@@ -130,5 +130,11 @@ module ODBCAdapter
     def prepared_binds(binds)
       prepare_binds_for_database(binds).map { |bind| _type_cast(bind) }
     end
+
+    # HACK！
+    # support activerecord 5.1
+    def prepare_binds_for_database(binds)
+      binds.map(&:value_for_database)
+    end
   end
 end
