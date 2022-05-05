@@ -26,6 +26,14 @@ module ODBCAdapter
       def supports_migrations?
         true
       end
+
+      # support dm
+      def rename_column(table_name, column_name, new_column_name)
+        column = column_for(table_name, column_name)
+        current_type = column.native_type
+        current_type << "(#{column.limit})" if column.limit
+        execute("ALTER TABLE #{table_name} RENAME COLUMN #{column_name} TO #{new_column_name}")
+      end
     end
   end
 end
