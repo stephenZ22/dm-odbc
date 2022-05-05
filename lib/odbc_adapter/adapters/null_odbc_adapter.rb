@@ -34,6 +34,26 @@ module ODBCAdapter
         current_type << "(#{column.limit})" if column.limit
         execute("ALTER TABLE #{table_name} RENAME COLUMN #{column_name} TO #{new_column_name}")
       end
+
+      def change_column(table_name, column_name, type, options = {})
+        unless options_include_default?(options)
+          options[:default] = column_for(table_name, column_name).default
+        end
+
+        change_column_sql = "ALTER TABLE #{table_name} MODIFY #{column_name} #{type_to_sql(type, options[:limit], options[  :precision], options[:scale])}"
+        # TODO: add_column_options! 需重新复写
+        # add_column_options!(change_column_sql, options)
+        execute(change_column_sql)
+      end
+
+      def options_include_default?(options)
+        if options.include?(:default) && options[:default].nil?
+          if options.include?(:column) && options[:column].native_type =~ /timestamp/i
+            options.delete(:default)
+          end
+        end
+        super(options)
+      end
     end
   end
 end
