@@ -46,6 +46,22 @@ module ODBCAdapter
         execute(change_column_sql)
       end
 
+      def change_column_default(table_name, column_name, default)
+        execute("ALTER TABLE #{table_name} ALTER COLUMN #{column_name} SET DEFAULT #{quote(default)}")
+      end
+
+      def rename_index(_table_name, old_name, new_name)
+        execute("ALTER INDEX #{quote_column_name(old_name)} RENAME TO #{quote_table_name(new_name)}")
+      end
+
+      def remove_index(_table_name, index_name)
+        execute("DROP INDEX #{index_name}")
+      end
+
+      def rename_table(table_name, new_name)
+        # TDDO: complete
+      end
+
       def options_include_default?(options)
         if options.include?(:default) && options[:default].nil?
           if options.include?(:column) && options[:column].native_type =~ /timestamp/i
