@@ -55,11 +55,11 @@ module ODBCAdapter
       end
 
       def remove_index(_table_name, index_name)
-        execute("DROP INDEX #{index_name}")
+        execute("DROP INDEX #{index_name[:name]}" )
       end
 
       def rename_table(table_name, new_name)
-        # TDDO: complete
+        execute("ALTER TABLE #{quote_table_name(table_name)} REANME TO #{quote_table_name(new_name)}")
       end
 
       def options_include_default?(options)
