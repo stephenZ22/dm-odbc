@@ -4,6 +4,8 @@ module ODBCAdapter
     # registry. This allows for minimal support for DBMSs for which we don't
     # have an explicit adapter.
     class NullODBCAdapter < ActiveRecord::ConnectionAdapters::ODBCAdapter
+      PRIMARY_KEY = 'int IDENTITY (1, 1) NOT NULL'.freeze
+
       class BindSubstitution < Arel::Visitors::ToSql
         include Arel::Visitors::BindVisitor
       end
