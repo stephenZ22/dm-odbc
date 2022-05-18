@@ -59,7 +59,7 @@ module ODBCAdapter
       end
 
       def rename_table(table_name, new_name)
-        execute("ALTER TABLE #{quote_table_name(table_name)} REANME TO #{quote_table_name(new_name)}")
+        execute("ALTER TABLE #{quote_table_name(table_name)} RENAME TO #{quote_table_name(new_name)}")
       end
 
       def options_include_default?(options)
