@@ -42,7 +42,7 @@ module ODBCAdapter
           options[:default] = column_for(table_name, column_name).default
         end
 
-        change_column_sql = "ALTER TABLE #{table_name} MODIFY #{column_name} #{type_to_sql(type, options[:limit], options[  :precision], options[:scale])}"
+        change_column_sql = "ALTER TABLE #{table_name} MODIFY #{column_name} #{type_to_sql(type, limit: options[:limit], precision: options[:precision], scale: options[:scale])}"
         # TODO: add_column_options! 需重新复写
         # add_column_options!(change_column_sql, options)
         execute(change_column_sql)
