@@ -19,6 +19,10 @@ module ActiveRecord
   class Base
     class << self
       # Build a new ODBC connection with the given configuration.
+      def primary_key
+        'id'
+      end
+
       def odbc_connection(config)
         config = config.symbolize_keys
 
