@@ -8,6 +8,8 @@ module ODBCAdapter
     # Executes the SQL statement in the context of this connection.
     # Returns the number of rows affected.
     def execute(sql, name = nil, binds = [])
+      sql = support_dm_default!(sql) if sql.include?('DEFAULT')
+
       log(sql, name) do
         if prepared_statements
           @connection.do(sql, *prepared_binds(binds))
@@ -73,6 +75,14 @@ module ODBCAdapter
     end
 
     private
+
+    # TODO: 使用 quote_default_expression > quote
+    # 暂时使用字符串替换实现 boolean 类型默认值
+    def support_dm_default!(sql)
+      sql.gsub!("'t'", "'1'")
+      sql.gsub!("'f'", "'0'")
+      sql
+    end
 
     # A custom hook to allow end users to overwrite the type casting before it
     # is returned to ActiveRecord. Useful before a full adapter has made its way
