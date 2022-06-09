@@ -29,6 +29,10 @@ module ODBCAdapter
         true
       end
 
+      def supports_json?
+        true
+      end
+
       # support dm
       def rename_column(table_name, column_name, new_column_name)
         column = column_for(table_name, column_name)

@@ -8,7 +8,7 @@ module ODBCAdapter
     # Executes the SQL statement in the context of this connection.
     # Returns the number of rows affected.
     def execute(sql, name = nil, binds = [])
-      sql = support_dm_default!(sql) if sql.include?('DEFAULT')
+      # sql = support_dm_default!(sql) if sql.include?('DEFAULT')
 
       log(sql, name) do
         if prepared_statements

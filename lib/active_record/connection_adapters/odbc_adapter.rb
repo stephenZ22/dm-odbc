@@ -218,5 +218,19 @@ module ActiveRecord
         connection.use_time = true
       end
     end
+
+    class TableDefinition
+      def json(*args, **options)
+        args.each { |name| column(name, :text, options) }
+      end
+
+      def mediumtext(*args, **options)
+        args.each { |name| column(name, :text, options) }
+      end
+
+      def longtext(*args, **options)
+        args.each { |name| column(name, :text, options) }
+      end
+    end
   end
 end
