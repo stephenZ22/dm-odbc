@@ -16,7 +16,7 @@ module ODBCAdapter
           adapter if reported_name =~ pattern
         end
 
-      normalize_adapter(found && found.last || :Null)
+      normalize_adapter(found && found.last || :Dm)
     end
 
     def register(pattern, superclass = Object, &block)

@@ -3,7 +3,7 @@ module ODBCAdapter
     # A default adapter used for databases that are no explicitly listed in the
     # registry. This allows for minimal support for DBMSs for which we don't
     # have an explicit adapter.
-    class NullODBCAdapter < ActiveRecord::ConnectionAdapters::ODBCAdapter
+    class DmODBCAdapter < ActiveRecord::ConnectionAdapters::ODBCAdapter
       PRIMARY_KEY = 'int IDENTITY (1, 1) NOT NULL'.freeze
 
       class BindSubstitution < Arel::Visitors::ToSql
