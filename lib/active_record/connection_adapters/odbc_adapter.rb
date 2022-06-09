@@ -229,7 +229,7 @@ module ActiveRecord
       end
 
       def longtext(*args, **options)
-        args.each { |name| column(name, :text, options) }
+        args.each { |name| column(name, :clob, options) }
       end
     end
   end
