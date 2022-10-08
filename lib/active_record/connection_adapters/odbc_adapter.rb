@@ -18,9 +18,13 @@ require 'odbc_adapter/version'
 module ActiveRecord
   class Base
     class << self
-      # Build a new ODBC connection with the given configuration.
+      # 这里要动态判断，有的表是没有id的，如果写死会造成保存是报错ActiveModel::MissingAttributeError
       def primary_key
-        'id'
+        raise ArgumentError unless table_name.present?
+
+        id = column_names.include?('id') ? 'id' : nil
+        @primary_key = id unless defined? @primary_key
+        @primary_key
       end
 
       def odbc_connection(config)

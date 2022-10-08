@@ -24,7 +24,7 @@ module ODBCAdapter
       end
 
       def truncate(table_name, name = nil)
-        execute("TRUNCATE TABLE #{quote_table_name(table_name)}", name)
+        execute_run("TRUNCATE TABLE #{quote_table_name(table_name)}", name)
       end
 
       # Quotes a string, escaping any ' (single quote) and \ (backslash)
@@ -70,9 +70,9 @@ module ODBCAdapter
       #   create_database 'rails_development', charset: :big5
       def create_database(name, options = {})
         if options[:collation]
-          execute("CREATE DATABASE `#{name}` DEFAULT CHARACTER SET `#{options[:charset] || 'utf8'}` COLLATE `#{options[:collation]}`")
+          execute_run("CREATE DATABASE `#{name}` DEFAULT CHARACTER SET `#{options[:charset] || 'utf8'}` COLLATE `#{options[:collation]}`")
         else
-          execute("CREATE DATABASE `#{name}` DEFAULT CHARACTER SET `#{options[:charset] || 'utf8'}`")
+          execute_run("CREATE DATABASE `#{name}` DEFAULT CHARACTER SET `#{options[:charset] || 'utf8'}`")
         end
       end
 
@@ -81,7 +81,7 @@ module ODBCAdapter
       # Example:
       #   drop_database('rails_development')
       def drop_database(name)
-        execute("DROP DATABASE IF EXISTS `#{name}`")
+        execute_run("DROP DATABASE IF EXISTS `#{name}`")
       end
 
       def create_table(name, options = {})
@@ -90,7 +90,7 @@ module ODBCAdapter
 
       # Renames a table.
       def rename_table(name, new_name)
-        execute("RENAME TABLE #{quote_table_name(name)} TO #{quote_table_name(new_name)}")
+        execute_run("RENAME TABLE #{quote_table_name(name)} TO #{quote_table_name(new_name)}")
       end
 
       def change_column(table_name, column_name, type, options = {})
@@ -100,7 +100,7 @@ module ODBCAdapter
 
         change_column_sql = "ALTER TABLE #{table_name} CHANGE #{column_name} #{column_name} #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}"
         add_column_options!(change_column_sql, options)
-        execute(change_column_sql)
+        execute_run(change_column_sql)
       end
 
       def change_column_default(table_name, column_name, default_or_changes)
@@ -113,7 +113,7 @@ module ODBCAdapter
         column = column_for(table_name, column_name)
 
         unless null || default.nil?
-          execute("UPDATE #{quote_table_name(table_name)} SET #{quote_column_name(column_name)}=#{quote(default)} WHERE #{quote_column_name(column_name)} IS NULL")
+          execute_run("UPDATE #{quote_table_name(table_name)} SET #{quote_column_name(column_name)}=#{quote(default)} WHERE #{quote_column_name(column_name)} IS NULL")
         end
         change_column(table_name, column_name, column.sql_type, null: null)
       end
@@ -122,7 +122,7 @@ module ODBCAdapter
         column = column_for(table_name, column_name)
         current_type = column.native_type
         current_type << "(#{column.limit})" if column.limit
-        execute("ALTER TABLE #{table_name} CHANGE #{column_name} #{new_column_name} #{current_type}")
+        execute_run("ALTER TABLE #{table_name} CHANGE #{column_name} #{new_column_name} #{current_type}")
       end
 
       # Skip primary key indexes

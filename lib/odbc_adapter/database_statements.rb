@@ -7,22 +7,27 @@ module ODBCAdapter
 
     # Executes the SQL statement in the context of this connection.
     # Returns the number of rows affected.
-    def execute(sql, name = nil, binds = [])
-      # sql = support_dm_default!(sql) if sql.include?('DEFAULT')
-
-      log(sql, name) do
-        if prepared_statements
-          @connection.do(sql, *prepared_binds(binds))
-        else
-          @connection.do(sql)
+    # 返回行数
+    def execute_run(sql, name = nil, binds = [])
+      sql  = change_sql(sql)
+      sqls = change_modify_sql(sql)
+      result = nil
+      sqls.each do |sql|
+        result = log(sql, name) do
+          if prepared_statements
+            @connection.do(sql, *prepared_binds(binds))
+          else
+            @connection.do(sql)
+          end
         end
       end
+      result
     end
 
-    # Executes +sql+ statement in the context of this connection using
-    # +binds+ as the bind substitutes. +name+ is logged along with
-    # the executed +sql+ statement.
-    def exec_query(sql, name = 'SQL', binds = [], prepare: false) # rubocop:disable Lint/UnusedMethodArgument
+    # 返回结果，结果数组，没有健值映射
+    def execute(sql, name = 'SQL', binds = [], prepare: false) # rubocop:disable Lint/UnusedMethodArgument
+      # 这里不需要change_modify_sql，因为这里会返回i数组结果的，而modify不需要返回
+      sql  = change_sql(sql)
       log(sql, name) do
         stmt =
           if prepared_statements
@@ -34,7 +39,31 @@ module ODBCAdapter
         columns = stmt.columns
         values  = stmt.to_a
         stmt.drop
+        values = dbms_type_cast(columns.values, values)
+        column_names = columns.keys.map { |key| format_case(key) }
+        values
+        # ActiveRecord::Result.new(column_names, values)
+      end
+    end
 
+    # Executes +sql+ statement in the context of this connection using
+    # +binds+ as the bind substitutes. +name+ is logged along with
+    # the executed +sql+ statement.
+    # 返回结果，健值映射数组
+    def exec_query(sql, name = 'SQL', binds = [], prepare: false) # rubocop:disable Lint/UnusedMethodArgument
+      # 这里不需要change_modify_sql，因为这里会返回i数组结果的，而modify不需要返回
+      sql  = change_sql(sql)
+      log(sql, name) do
+        stmt =
+          if prepared_statements
+            @connection.run(sql, *prepared_binds(binds))
+          else
+            @connection.run(sql)
+          end
+
+        columns = stmt.columns
+        values  = stmt.to_a
+        stmt.drop
         values = dbms_type_cast(columns.values, values)
         column_names = columns.keys.map { |key| format_case(key) }
         ActiveRecord::Result.new(column_names, values)
@@ -45,7 +74,7 @@ module ODBCAdapter
     # +binds+ as the bind substitutes. +name+ is logged along with
     # the executed +sql+ statement.
     def exec_delete(sql, name, binds)
-      execute(sql, name, binds)
+      execute_run(sql, name, binds)
     end
     alias exec_update exec_delete
 
@@ -76,12 +105,51 @@ module ODBCAdapter
 
     private
 
-    # TODO: 使用 quote_default_expression > quote
-    # 暂时使用字符串替换实现 boolean 类型默认值
-    def support_dm_default!(sql)
-      sql.gsub!("'t'", "'1'")
-      sql.gsub!("'f'", "'0'")
+    # def change_sql(sql)
+    #   # # 替换json
+    #   # json_column = new_sql.match(/(?<=\s)[^\s]+(?=\sjson)/).to_s
+    #   # new_sql = new_sql.gsub("#{json_column} json", "#{json_column} text CHECK (#{json_column} IS JSON)") if json_column.present?
+    #   # new_sql
+    # end
+
+    # modify sql 修改 
+    # 由于程序无法同时执行多条sql语句，所以返回数组，依次执行
+    def change_modify_sql(sql)
+      return [sql] if sql.match(/ALTER\s.*\sMODIFY\s.*\s/i).blank?
+
+      table_name      = sql.match(/ALTER TABLE (.*) MODIFY/)[1]
+      column_name     = sql.match(/MODIFY\s([^\s]+)/)[1]
+      new_column_name = column_name.sub(/\"$/, '1"')
+      type_name       = sql.match(/MODIFY\s[^\s]+\s([^\s]+)/)[1]
+      option          = sql.match(/MODIFY\s[^\s]+\s[^\s]+\s(.*)/)&.[](1)
+
+      [
+        "alter table #{table_name} add #{new_column_name} #{type_name} #{option};",
+        "update #{table_name} set #{new_column_name}=#{column_name};",
+        "alter table #{table_name} drop column #{column_name};",
+        "alter table #{table_name} rename column #{new_column_name} to #{column_name};"
+      ]        
+    end
+
+    def change_sql(sql)
+      sql = change_for_update_sql(sql)
+      sql = change_increment_sql(sql)
       sql
+    end
+
+    # 修改for update 语句
+    def change_for_update_sql(sql)
+      return sql if sql.match(/SELECT.* FOR\s+UPDATE/i).blank?
+
+      "#{sql};commit;"
+    end
+
+    # 修改自增语句（自增自断不允许插入数据，需要修改语句）
+    def change_increment_sql(sql)
+      return sql if sql.match(/INSERT\s*INTO.*\(\"ID\",.*VALUES.*/i).blank?
+
+      table_name = sql.match(/INSERT\s*INTO\s*([^\s]+)/)[1]
+      "SET IDENTITY_INSERT #{table_name} ON;#{sql};SET IDENTITY_INSERT #{table_name} OFF;"
     end
 
     # A custom hook to allow end users to overwrite the type casting before it
@@ -94,7 +162,7 @@ module ODBCAdapter
     # Assume received identifier is in DBMS's data dictionary case.
     def format_case(identifier)
       if database_metadata.upcase_identifiers?
-        identifier =~ /[a-z]/ ? identifier : identifier.downcase
+        identifier =~ /[a-z]/ ? identifier : identifier&.downcase
       else
         identifier
       end

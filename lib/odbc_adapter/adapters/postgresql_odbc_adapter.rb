@@ -64,10 +64,10 @@ module ODBCAdapter
       end
 
       def disable_referential_integrity
-        execute(tables.map { |name| "ALTER TABLE #{quote_table_name(name)} DISABLE TRIGGER ALL" }.join(';'))
+        execute_run(tables.map { |name| "ALTER TABLE #{quote_table_name(name)} DISABLE TRIGGER ALL" }.join(';'))
         yield
       ensure
-        execute(tables.map { |name| "ALTER TABLE #{quote_table_name(name)} ENABLE TRIGGER ALL" }.join(';'))
+        execute_run(tables.map { |name| "ALTER TABLE #{quote_table_name(name)} ENABLE TRIGGER ALL" }.join(';'))
       end
 
       # Create a new PostgreSQL database. Options include <tt>:owner</tt>,
@@ -98,7 +98,7 @@ module ODBCAdapter
           end
         end
 
-        execute("CREATE DATABASE #{quote_table_name(name)}#{option_string}")
+        execute_run("CREATE DATABASE #{quote_table_name(name)}#{option_string}")
       end
 
       # Drops a PostgreSQL database.
@@ -106,33 +106,33 @@ module ODBCAdapter
       # Example:
       #   drop_database 'rails_development'
       def drop_database(name)
-        execute "DROP DATABASE IF EXISTS #{quote_table_name(name)}"
+        execute_run "DROP DATABASE IF EXISTS #{quote_table_name(name)}"
       end
 
       # Renames a table.
       def rename_table(name, new_name)
-        execute("ALTER TABLE #{quote_table_name(name)} RENAME TO #{quote_table_name(new_name)}")
+        execute_run("ALTER TABLE #{quote_table_name(name)} RENAME TO #{quote_table_name(new_name)}")
       end
 
       def change_column(table_name, column_name, type, options = {})
-        execute("ALTER TABLE #{table_name} ALTER  #{column_name} TYPE #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}")
+        execute_run("ALTER TABLE #{table_name} ALTER  #{column_name} TYPE #{type_to_sql(type, options[:limit], options[:precision], options[:scale])}")
         change_column_default(table_name, column_name, options[:default]) if options_include_default?(options)
       end
 
       def change_column_default(table_name, column_name, default)
-        execute("ALTER TABLE #{table_name} ALTER COLUMN #{column_name} SET DEFAULT #{quote(default)}")
+        execute_run("ALTER TABLE #{table_name} ALTER COLUMN #{column_name} SET DEFAULT #{quote(default)}")
       end
 
       def rename_column(table_name, column_name, new_column_name)
-        execute("ALTER TABLE #{table_name} RENAME #{column_name} TO #{new_column_name}")
+        execute_run("ALTER TABLE #{table_name} RENAME #{column_name} TO #{new_column_name}")
       end
 
       def remove_index!(_table_name, index_name)
-        execute("DROP INDEX #{quote_table_name(index_name)}")
+        execute_run("DROP INDEX #{quote_table_name(index_name)}")
       end
 
       def rename_index(_table_name, old_name, new_name)
-        execute("ALTER INDEX #{quote_column_name(old_name)} RENAME TO #{quote_table_name(new_name)}")
+        execute_run("ALTER INDEX #{quote_column_name(old_name)} RENAME TO #{quote_table_name(new_name)}")
       end
 
       # Returns a SELECT DISTINCT clause for a given set of columns and a given
@@ -157,7 +157,7 @@ module ODBCAdapter
 
       protected
 
-      # Executes an INSERT query and returns the new record's ID
+      # execute_runs an INSERT query and returns the new record's ID
       def insert_sql(sql, name = nil, pk = nil, id_value = nil, sequence_name = nil)
         unless pk
           table_ref = extract_table_ref_from_insert_sql(sql)
